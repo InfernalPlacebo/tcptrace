@@ -3,16 +3,25 @@
 import sys
 
 import argparse
-from scapy.all import *
+from scapy.all import sr1, conf
 from scapy.layers.inet import IP, ICMP, TCP, UDP
 from pyfiglet import Figlet
 from termcolor import colored, cprint
 
+# List used to store the hops during trace.
 hops = []
+# Sets scapy to 0 verbosity
 conf.verb = 0
+# Preloads the args variable
 args = None
 
+
 def ping(dst):
+    """Pings the specified host.
+
+    :param dst: The hostname or IP of the host to ping.
+    """
+
     i = 1
     while i < 5:
         i += 1
@@ -22,6 +31,15 @@ def ping(dst):
 
 
 def trace(dst, ttl, num, dport):
+    """Begins the traceroute to the specified host.
+
+    :param dst: The hostname or IP of the host to trace.
+    :param ttl: Maximum number of hops.
+    :param num: Which hop number the trace is on.
+    :param dport: The port to be using during the trace.
+    :return:
+    """
+
     global hops
 
     if ttl >= num:
@@ -39,21 +57,29 @@ def trace(dst, ttl, num, dport):
 
 
 def output():
+    """Prints the output of the hops."""
+
     global hops
 
     print(hops)
 
 
 def head():
+    """Displays the ASCII header."""
+
     header = Figlet(font='slant')
     print(colored(header.renderText('TCPTrace'), 'cyan'))
 
 
 def menu():
+    """Displays the interactive menu."""
+
     pass
 
 
 def arguments():
+    """Loads the arguments and calls the header function."""
+
     global args
 
     # Displays ASCII header
@@ -65,13 +91,15 @@ def arguments():
     # parser.add_argument('--sport', '-sp', help='Specify the source port.', type=int)
     parser.add_argument('--ttl', '-t', help='Maximum number of jumps. Default: 30', default=30, type=int)
     parser.add_argument('--menu', '-m', help='Use interactive menu.', action='store_true')
-    # parser.add_argument('--license', '-l', help="Display the license information.", action='store_true')
+    parser.add_argument('--license', '-l', help="Display the license information.", action='store_true')
     parser.add_argument('--github', '-g', help="Display the GitHub repository.", action='store_true')
 
     args = parser.parse_args()
 
 
 def license():
+    """Displays the license information."""
+
     pass
 
 
@@ -81,11 +109,14 @@ if __name__ == "__main__":
     if len(sys.argv) == 1:
         print('Please include arguments. "-m" for interactive mode or "-h" for help.')
     else:
+        # noinspection PyUnresolvedReferences
         if args.menu:
             menu()
         elif args.license:
-            license()
+            print('GPL-3.0 License')
+            print('https://github.com/InfernalPlacebo/tcptrace/blob/master/LICENSE')
         elif args.github:
-            print("Github, yo")
+            print("https://github.com/InfernalPlacebo/tcptrace")
         else:
+            # noinspection PyUnresolvedReferences
             trace(args.host, args.ttl, 1, args.dport)
