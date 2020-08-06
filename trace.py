@@ -1,9 +1,11 @@
 #! /usr/bin/env python
 
 import sys
+import socket
 
 import argparse
 from scapy.all import sr1, conf
+from scapy.layers.dns import DNS, DNSQR
 from scapy.layers.inet import IP, ICMP, TCP, UDP
 from pyfiglet import Figlet
 from termcolor import colored, cprint
@@ -30,7 +32,7 @@ def ping(dst):
             p.show()
 
 
-def trace(dst, ttl, num, dport):
+def trace_tcp(dst, ttl, num, dport):
     """Begins the traceroute to the specified host.
 
     :param dst: The hostname or IP of the host to trace.
@@ -51,7 +53,7 @@ def trace(dst, ttl, num, dport):
             hops.append(p.src)
             if ttl > 1:
                 num += 1
-                trace(dst, ttl, num, dport)
+                trace_tcp(dst, ttl, num, dport)
     else:
         output()
 
@@ -61,7 +63,16 @@ def output():
 
     global hops
 
-    print(hops)
+    i = 1
+    for hop in hops:
+        try:
+            domain = socket.gethostbyaddr(hop)[0]
+        except socket.error:
+            domain = 'Not Found'
+        finally:
+            print(f'{i}     {hop}       {domain}')
+
+        i += 1
 
 
 def head():
@@ -89,6 +100,7 @@ def arguments():
     parser.add_argument('--host', '-i', type=str, help='Host to trace')
     parser.add_argument('--dport', '-dp', help='Specify the destination port. Default: 80', default=80, type=int)
     # parser.add_argument('--sport', '-sp', help='Specify the source port.', type=int)
+    parser.add_argument('--proto', '-p', type=str, help='Specify the networking protocol.', default='TCP')
     parser.add_argument('--ttl', '-t', help='Maximum number of jumps. Default: 30', default=30, type=int)
     parser.add_argument('--menu', '-m', help='Use interactive menu.', action='store_true')
     parser.add_argument('--license', '-l', help="Display the license information.", action='store_true')
@@ -119,4 +131,10 @@ if __name__ == "__main__":
             print("https://github.com/InfernalPlacebo/tcptrace")
         else:
             # noinspection PyUnresolvedReferences
-            trace(args.host, args.ttl, 1, args.dport)
+            if args.proto.upper() == 'TCP':
+                # noinspection PyUnresolvedReferences
+                trace_tcp(args.host, args.ttl, 1, args.dport)
+            elif args.proto.upper() == 'UDP':
+                pass
+            elif args.proto.upper() == 'ICMP':
+                pass
