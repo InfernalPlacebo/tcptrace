@@ -33,7 +33,7 @@ def ping(dst):
 
 
 def trace_tcp(dst, ttl, num, dport):
-    """Begins the traceroute to the specified host.
+    """Begins the TCP traceroute to the specified host.
 
     :param dst: The hostname or IP of the host to trace.
     :param ttl: Maximum number of hops.
@@ -58,6 +58,58 @@ def trace_tcp(dst, ttl, num, dport):
         output()
 
 
+def trace_udp(dst, ttl, num, dport):
+    """Begins the UDP traceroute to the specified host.
+
+    :param dst: The hostname or IP of the host to trace.
+    :param ttl: Maximum number of hops.
+    :param num: Which hop number the trace is on.
+    :param dport: The port to be using during the trace.
+    :return:
+    """
+
+    global hops
+
+    if ttl >= num:
+        p = sr1(IP(dst=dst, ttl=num) / UDP(dport=dport))
+        if p:
+            if p.src in hops:
+                output()
+                return
+            hops.append(p.src)
+            if ttl > 1:
+                num += 1
+                trace_udp(dst, ttl, num, dport)
+    else:
+        output()
+
+
+def trace_icmp(dst, ttl, num):
+    """Begins the ICP traceroute to the specified host.
+
+    :param dst: The hostname or IP of the host to trace.
+    :param ttl: Maximum number of hops.
+    :param num: Which hop number the trace is on.
+    :param dport: The port to be using during the trace.
+    :return:
+    """
+
+    global hops
+
+    if ttl >= num:
+        p = sr1(IP(dst=dst, ttl=num) / ICMP())
+        if p:
+            if p.src in hops:
+                output()
+                return
+            hops.append(p.src)
+            if ttl > 1:
+                num += 1
+                trace_icmp(dst, ttl, num)
+    else:
+        output()
+
+
 def output():
     """Prints the output of the hops."""
 
@@ -65,10 +117,11 @@ def output():
 
     i = 1
     for hop in hops:
+        domain = 'Not Found'
         try:
             domain = socket.gethostbyaddr(hop)[0]
         except socket.error:
-            domain = 'Not Found'
+            pass
         finally:
             print(f'{i}     {hop}       {domain}')
 
@@ -133,8 +186,16 @@ if __name__ == "__main__":
             # noinspection PyUnresolvedReferences
             if args.proto.upper() == 'TCP':
                 # noinspection PyUnresolvedReferences
+                print(f'Beginning TCP traceroute on port {args.dport}')
+                # noinspection PyUnresolvedReferences
                 trace_tcp(args.host, args.ttl, 1, args.dport)
             elif args.proto.upper() == 'UDP':
-                pass
+                # noinspection PyUnresolvedReferences
+                print(f'Beginning UDP traceroute on port {args.dport}')
+                # noinspection PyUnresolvedReferences
+                trace_udp(args.host, args.ttl, 1, args.dport)
             elif args.proto.upper() == 'ICMP':
-                pass
+                # noinspection PyUnresolvedReferences
+                print(f'Beginning ICMP traceroute')
+                # noinspection PyUnresolvedReferences
+                trace_icmp(args.host, args.ttl, 1)
